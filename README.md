@@ -34,5 +34,3 @@ A custom module for Odoo to manage electronic invoices (eHoaDon) for Vietnamese 
 - **Odoo 20** - Branch: `odoo_20`
 
 <img width="1280" height="698" alt="image" src="https://github.com/user-attachments/assets/df445022-01d4-494c-abbd-63457dfaa81a" />
-
-<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/9b8e61e6-6a2d-4c5e-b881-fbabd9737f1a" />
