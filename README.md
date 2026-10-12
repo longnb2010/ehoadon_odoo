@@ -28,9 +28,9 @@ A custom module for Odoo to manage electronic invoices (eHoaDon) for Vietnamese 
 
 ## 📦 Phiên bản hỗ trợ / Supported Versions
 
-- **Odoo 13** - Branch: `odoo_13`
-- **Odoo 17** - Branch: `odoo_17`
-- **Odoo 19** - Branch: `odoo_19`
-- **Odoo 20** - Branch: `odoo_20`
+- **Odoo 13** - Module: `ehoadon/` - Branch: `odoo_13`
+- **Odoo 17** - Modules: `ehoadon_17/`, `ehoadon_17_tax_lookup/` - Branch: `odoo_17`
+- **Odoo 19** - Modules: `ehoadon_19/`, `ehoadon_19_tax_lookup/` - Branch: `odoo_19`
+- **Odoo 20** - Modules: `ehoadon_20/`, `ehoadon_20_tax_lookup/` - Branch: `odoo20`
 
 <img width="1280" height="698" alt="image" src="https://github.com/user-attachments/assets/df445022-01d4-494c-abbd-63457dfaa81a" />
