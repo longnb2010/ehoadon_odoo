@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_partner_view_form_inherit_ehoadon_einvoice" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.ehoadon.einvoice</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Thông tin xuất hóa đơn" name="einvoice_info">
+                    <group name="einvoice_lookup">
+                        <group>
+                            <field name="einvoice_vat_info" placeholder="nhập số thuế"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="einvoice_vat" string="Mã số thuế *"/>
+                            <field name="einvoice_name" string="Tên khách hàng *"/>
+                            <field name="einvoice_buyer_name" string="Tên đơn vị *"/>
+                        </group>
+                        <group>
+                            <field name="einvoice_partner_id" string="CCCD *"/>
+                            <field name="einvoice_address" string="Địa chỉ *"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

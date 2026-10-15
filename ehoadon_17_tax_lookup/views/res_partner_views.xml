@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_partner_view_form_inherit_ehoadon_tax_lookup" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.ehoadon.tax.lookup</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="ehoadon.res_partner_view_form_inherit_ehoadon_einvoice"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='einvoice_lookup']" position="inside">
+                <group>
+                    <button name="button_get_einvoice_info"
+                            string="Lấy thông tin"
+                            type="object"
+                            class="btn-primary"
+                            help="Tra cứu mã số thuế (XInvoice) và tự điền các ô bên dưới"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

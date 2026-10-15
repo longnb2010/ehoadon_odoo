@@ -334,18 +334,13 @@ class AccountMove(models.Model):
         return log
 
     def _ehoadon_store_json_attachment(self, payload):
+        """Không còn lưu payload JSON thành attachment.
+
+        Payload gửi eHoaDon đã nằm trong tab «eHoaDon API Log» (request của mỗi lần gọi API),
+        nên không tạo thêm file đính kèm vào DB. Giữ hàm để các chỗ gọi không phải sửa.
+        """
         self.ensure_one()
-        content = json.dumps(payload, ensure_ascii=False, indent=2).encode('utf-8')
-        att = self.env['ir.attachment'].with_user(SUPERUSER_ID).create({
-            'name': '%s_ehoadon.json' % (self.name or 'invoice').replace('/', '_'),
-            'type': 'binary',
-            'datas': base64.b64encode(content),
-            'res_model': self._name,
-            'res_id': self.id,
-            'mimetype': 'application/json',
-        })
-        self.ehoadon_json_attachment_id = att.id
-        return att
+        return False
 
     def _ehoadon_check_configuration(self):
         self.ensure_one()
@@ -452,8 +447,8 @@ class AccountMove(models.Model):
         )
         return invoice_id
 
-    def _ehoadon_fetch_file_attachment(self, kind='pdf'):
-        """Download PDF/XML representation → ir.attachment. kind: pdf|xml.
+    def _ehoadon_fetch_file_content(self, kind='pdf'):
+        """Gọi API eHoaDon lấy PDF/XML, trả (bytes, tên_file, mimetype). KHÔNG lưu DB.
 
         PDF path = POST Api/EInvoiceOnline/DownloadInvoiceAsPdf/{id}
         (docs.ehoadon.online/download-invoice-as-pdf).
@@ -492,23 +487,32 @@ class AccountMove(models.Model):
         )
         try:
             raw = base64.b64decode(content_b64)
-            datas = base64.b64encode(raw).decode('ascii')
         except Exception:
-            datas = content_b64 if isinstance(content_b64, str) else base64.b64encode(content_b64).decode('ascii')
-        att = self.env['ir.attachment'].with_user(SUPERUSER_ID).create({
-            'name': file_name,
-            'type': 'binary',
-            'datas': datas,
-            'res_model': self._name,
-            'res_id': self.id,
-            'mimetype': mimetype,
-        })
+            raw = content_b64.encode() if isinstance(content_b64, str) else bytes(content_b64)
+        if not raw:
+            raise UserError(_('eHoaDon trả file %s rỗng.') % kind.upper())
         self._ehoadon_log_exchange(
             op, 'success', _('%s via DownloadInvoiceAs%s.') % (kind.upper(), kind.capitalize()),
             request={'path': path, 'id': self.ehoadon_invoice_id or self.ehoadon_guid},
             response=self._ehoadon_sanitize_response(resp),
             extra={'fileName': file_name},
         )
+        return raw, file_name, mimetype
+
+    def _ehoadon_fetch_file_attachment(self, kind='pdf'):
+        """Như _ehoadon_fetch_file_content nhưng lưu thành ir.attachment (dùng cho nút Tải về)."""
+        self.ensure_one()
+        raw, file_name, mimetype = self._ehoadon_fetch_file_content(kind)
+        att = self.env['ir.attachment'].with_user(SUPERUSER_ID).create({
+            'name': file_name,
+            'type': 'binary',
+            'raw': raw,
+            'res_model': self._name,
+            'res_id': self.id,
+            'mimetype': mimetype,
+        })
+        if not att.file_size:
+            raise UserError(_('Không lưu được nội dung file %s vào attachment.') % kind.upper())
         return att
 
     def action_ehoadon_preview_invoice(self):
@@ -525,19 +529,17 @@ class AccountMove(models.Model):
             raise UserError('\n'.join(errors))
         template = self._ehoadon_resolve_template()
         self._ehoadon_ensure_invoice_id_for_pdf(template)
-        att = self._ehoadon_fetch_file_attachment(kind='pdf')
         self._ehoadon_create_log(
             'preview', 'success',
-            _('Xem trước qua DownloadInvoiceAsPdf.'),
+            _('Xem trước qua DownloadInvoiceAsPdf (không lưu file vào DB).'),
             {
                 'endpoint': 'Api/EInvoiceOnline/DownloadInvoiceAsPdf/%s' % self.ehoadon_invoice_id,
-                'attachment_id': att.id,
                 'invoiceId': self.ehoadon_invoice_id,
             },
         )
         return {
             'type': 'ir.actions.act_url',
-            'url': '/web/content/%s?download=false' % att.id,
+            'url': '/ehoadon/preview/%s' % self.id,
             'target': 'new',
         }
 
