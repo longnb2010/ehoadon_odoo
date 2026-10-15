@@ -211,7 +211,7 @@ class AccountMove(models.Model):
         # VAT nước ngoài (vd US12345673) hoặc rỗng → bán cho người tiêu dùng.
         if not tax_number or not self._ehoadon_valid_tax_number(tax_number):
             return self._ehoadon_consumer_customer()
-        address_lines = (partner._display_address(without_company=True) or '').splitlines()
+        address_lines = (partner._display_address(without_name=True) or '').splitlines()
         address = ', '.join(line.strip() for line in address_lines if line.strip())
         return {
             'taxNumber': tax_number,
