@@ -28,10 +28,10 @@ A custom module for Odoo to manage electronic invoices (eHoaDon) for Vietnamese 
 
 ## 📦 Phiên bản hỗ trợ / Supported Versions
 
-- **Odoo 13** - Branch: `odoo_13`
+- **Odoo 13** - Branch: `odoo_13` (legacy)
 - **Odoo 17** - Branch: `17.0`
-- **Odoo 17** - Branch: `18.0`
-- **Odoo 19** - Branch: `18.0`
+- **Odoo 18** - Branch: `18.0`
+- **Odoo 19** - Branch: `19.0`
 - **Odoo 20** - Branch: `20.0`
 
 <img width="1280" height="698" alt="image" src="https://github.com/user-attachments/assets/df445022-01d4-494c-abbd-63457dfaa81a" />
