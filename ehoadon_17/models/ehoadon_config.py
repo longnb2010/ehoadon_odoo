@@ -76,7 +76,7 @@ class EhoadonConfig(models.Model):
     def get_or_create_config(self):
         config = self.search([], limit=1)
         if not config:
-            if not self.env.user.has_group('ehoadon.group_ehoadon_manager'):
+            if not self.env.user.has_group('ehoadon_17.group_ehoadon_manager'):
                 raise UserError(_(
                     'Chưa có cấu hình eHoaDon. Vui lòng liên hệ quản trị (eHoaDon Manager).'
                 ))

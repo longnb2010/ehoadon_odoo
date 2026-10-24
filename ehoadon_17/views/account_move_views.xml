@@ -10,12 +10,12 @@
                         name="action_ehoadon_preview_invoice"
                         type="object"
                         class="oe_highlight"
-                        groups="ehoadon.group_ehoadon_preview"/>
+                        groups="ehoadon_17.group_ehoadon_preview"/>
                 <button string="eHoaDon: Phát hành"
                         name="action_ehoadon_send_invoice"
                         type="object"
                         class="oe_highlight"
-                        groups="ehoadon.group_ehoadon_send_invoice"
+                        groups="ehoadon_17.group_ehoadon_send_invoice"
                         invisible="state != 'posted' or ehoadon_invoice_state in ('sent', 'canceled', 'adjusted', 'replaced')"/>
             </xpath>
 
@@ -27,9 +27,9 @@
                             <field name="ehoadon_issue_date" readonly="1"/>
                             <field name="ehoadon_invoice_state"/>
                             <field name="ehoadon_remote_status" readonly="1"/>
-                            <field name="ehoadon_business_type" groups="ehoadon.group_ehoadon_send_replacement"/>
+                            <field name="ehoadon_business_type" groups="ehoadon_17.group_ehoadon_send_replacement"/>
                             <field name="ehoadon_origin_move_id"
-                                      groups="ehoadon.group_ehoadon_send_replacement"
+                                      groups="ehoadon_17.group_ehoadon_send_replacement"
                                       options="{'no_open': True, 'no_edit': True, 'no_create': True}"
                                       invisible="ehoadon_business_type != 'replace'"
                                       required="ehoadon_business_type == 'replace'"/>
@@ -44,7 +44,7 @@
                                     name="action_ehoadon_download_pdf"
                                     type="object"
                                     class="oe_highlight"
-                                    groups="ehoadon.group_ehoadon_send_invoice"
+                                    groups="ehoadon_17.group_ehoadon_send_invoice"
                                     invisible="not ehoadon_invoice_id"/>
                         </group>
                     </group>

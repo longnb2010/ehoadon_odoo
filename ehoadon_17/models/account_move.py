@@ -326,18 +326,13 @@ class AccountMove(models.Model):
         return log
 
     def _ehoadon_store_json_attachment(self, payload):
+        """Không còn lưu payload JSON thành attachment.
+
+        Payload gửi eHoaDon đã nằm trong tab «eHoaDon API Log» (request của mỗi lần gọi API),
+        nên không tạo thêm file đính kèm vào DB. Giữ hàm để các chỗ gọi không phải sửa.
+        """
         self.ensure_one()
-        content = json.dumps(payload, ensure_ascii=False, indent=2).encode('utf-8')
-        att = self.env['ir.attachment'].with_user(SUPERUSER_ID).create({
-            'name': '%s_ehoadon.json' % (self.name or 'invoice').replace('/', '_'),
-            'type': 'binary',
-            'datas': base64.b64encode(content),
-            'res_model': self._name,
-            'res_id': self.id,
-            'mimetype': 'application/json',
-        })
-        self.ehoadon_json_attachment_id = att.id
-        return att
+        return False
 
     def _ehoadon_check_configuration(self):
         self.ensure_one()
@@ -444,8 +439,8 @@ class AccountMove(models.Model):
         )
         return invoice_id
 
-    def _ehoadon_fetch_file_attachment(self, kind='pdf'):
-        """Download PDF/XML representation → ir.attachment. kind: pdf|xml.
+    def _ehoadon_fetch_file_content(self, kind='pdf'):
+        """Gọi API eHoaDon lấy PDF/XML, trả (bytes, tên_file, mimetype). KHÔNG lưu DB.
 
         PDF path = POST Api/EInvoiceOnline/DownloadInvoiceAsPdf/{id}
         (docs.ehoadon.online/download-invoice-as-pdf).
@@ -484,23 +479,32 @@ class AccountMove(models.Model):
         )
         try:
             raw = base64.b64decode(content_b64)
-            datas = base64.b64encode(raw).decode('ascii')
         except Exception:
-            datas = content_b64 if isinstance(content_b64, str) else base64.b64encode(content_b64).decode('ascii')
-        att = self.env['ir.attachment'].with_user(SUPERUSER_ID).create({
-            'name': file_name,
-            'type': 'binary',
-            'datas': datas,
-            'res_model': self._name,
-            'res_id': self.id,
-            'mimetype': mimetype,
-        })
+            raw = content_b64.encode() if isinstance(content_b64, str) else bytes(content_b64)
+        if not raw:
+            raise UserError(_('eHoaDon trả file %s rỗng.') % kind.upper())
         self._ehoadon_log_exchange(
             op, 'success', _('%s via DownloadInvoiceAs%s.') % (kind.upper(), kind.capitalize()),
             request={'path': path, 'id': self.ehoadon_invoice_id or self.ehoadon_guid},
             response=self._ehoadon_sanitize_response(resp),
             extra={'fileName': file_name},
         )
+        return raw, file_name, mimetype
+
+    def _ehoadon_fetch_file_attachment(self, kind='pdf'):
+        """Như _ehoadon_fetch_file_content nhưng lưu thành ir.attachment (dùng cho nút Tải về)."""
+        self.ensure_one()
+        raw, file_name, mimetype = self._ehoadon_fetch_file_content(kind)
+        att = self.env['ir.attachment'].with_user(SUPERUSER_ID).create({
+            'name': file_name,
+            'type': 'binary',
+            'raw': raw,
+            'res_model': self._name,
+            'res_id': self.id,
+            'mimetype': mimetype,
+        })
+        if not att.file_size:
+            raise UserError(_('Không lưu được nội dung file %s vào attachment.') % kind.upper())
         return att
 
     def action_ehoadon_preview_invoice(self):
@@ -510,26 +514,24 @@ class AccountMove(models.Model):
         Chưa có id → AddEInvoice một lần để lấy id, rồi chỉ gọi Download PDF.
         """
         self.ensure_one()
-        if not self.env.user.has_group('ehoadon.group_ehoadon_preview'):
+        if not self.env.user.has_group('ehoadon_17.group_ehoadon_preview'):
             raise UserError(_('Bạn không có quyền xem trước eHoaDon.'))
         errors = self._ehoadon_check_configuration()
         if errors:
             raise UserError('\n'.join(errors))
         template = self._ehoadon_resolve_template()
         self._ehoadon_ensure_invoice_id_for_pdf(template)
-        att = self._ehoadon_fetch_file_attachment(kind='pdf')
         self._ehoadon_create_log(
             'preview', 'success',
-            _('Xem trước qua DownloadInvoiceAsPdf.'),
+            _('Xem trước qua DownloadInvoiceAsPdf (không lưu file vào DB).'),
             {
                 'endpoint': 'Api/EInvoiceOnline/DownloadInvoiceAsPdf/%s' % self.ehoadon_invoice_id,
-                'attachment_id': att.id,
                 'invoiceId': self.ehoadon_invoice_id,
             },
         )
         return {
             'type': 'ir.actions.act_url',
-            'url': '/web/content/%s?download=false' % att.id,
+            'url': '/ehoadon/preview/%s' % self.id,
             'target': 'new',
         }
 
@@ -539,7 +541,7 @@ class AccountMove(models.Model):
 
     def action_ehoadon_create_draft(self):
         self.ensure_one()
-        if not self.env.user.has_group('ehoadon.group_ehoadon_create_draft'):
+        if not self.env.user.has_group('ehoadon_17.group_ehoadon_create_draft'):
             raise UserError(_('Bạn không có quyền tạo nháp eHoaDon.'))
         if self.state != 'posted':
             raise UserError(_('Chỉ tạo nháp khi hóa đơn đã posted.'))
@@ -562,7 +564,7 @@ class AccountMove(models.Model):
             btype = self.ehoadon_business_type or 'normal'
             if btype == 'normal':
                 btype = 'adjusted_down'
-            if btype == 'replace' and not self.env.user.has_group('ehoadon.group_ehoadon_send_replacement'):
+            if btype == 'replace' and not self.env.user.has_group('ehoadon_17.group_ehoadon_send_replacement'):
                 raise UserError(_('Bạn không có quyền phát hành hóa đơn thay thế.'))
             invoice_type = BUSINESS_TYPE_MAP.get(btype)
             if invoice_type is None:
@@ -609,7 +611,7 @@ class AccountMove(models.Model):
 
     def action_ehoadon_send_invoice(self):
         self.ensure_one()
-        if not self.env.user.has_group('ehoadon.group_ehoadon_send_invoice'):
+        if not self.env.user.has_group('ehoadon_17.group_ehoadon_send_invoice'):
             raise UserError(_('Bạn không có quyền phát hành eHoaDon.'))
         if self.state != 'posted':
             raise UserError(_('Thanh toán / post hóa đơn trước khi xuất eHoaDon.'))
@@ -662,7 +664,7 @@ class AccountMove(models.Model):
 
     def action_ehoadon_update_draft(self):
         self.ensure_one()
-        if not self.env.user.has_group('ehoadon.group_ehoadon_create_draft'):
+        if not self.env.user.has_group('ehoadon_17.group_ehoadon_create_draft'):
             raise UserError(_('Bạn không có quyền cập nhật nháp eHoaDon.'))
         if self.ehoadon_invoice_state != 'draft_remote' or not self.ehoadon_invoice_id:
             raise UserError(_('Chỉ cập nhật khi còn nháp remote (có invoiceId).'))
@@ -747,7 +749,7 @@ class AccountMove(models.Model):
 
     def action_ehoadon_delete_draft(self):
         self.ensure_one()
-        if not self.env.user.has_group('ehoadon.group_ehoadon_create_draft'):
+        if not self.env.user.has_group('ehoadon_17.group_ehoadon_create_draft'):
             raise UserError(_('Bạn không có quyền xóa nháp eHoaDon.'))
         if self.ehoadon_invoice_state != 'draft_remote':
             raise UserError(_('Chỉ xóa nháp remote (chưa phát hành).'))
@@ -828,7 +830,7 @@ class AccountMove(models.Model):
     def action_ehoadon_send_error_inform(self):
         """SendErrrorInform — thông báo sai sót / hủy nghiệp vụ sau phát hành."""
         self.ensure_one()
-        if not self.env.user.has_group('ehoadon.group_ehoadon_send_invoice'):
+        if not self.env.user.has_group('ehoadon_17.group_ehoadon_send_invoice'):
             raise UserError(_('Bạn không có quyền gửi thông báo sai sót eHoaDon.'))
         if self.ehoadon_invoice_state not in ('sent', 'adjusted', 'replaced', 'error'):
             raise UserError(_('Chỉ gửi thông báo sai sót khi HĐ đã có trên eHoaDon (sent).'))
@@ -857,7 +859,7 @@ class AccountMove(models.Model):
 
     def action_ehoadon_download_pdf(self):
         self.ensure_one()
-        if not self.env.user.has_group('ehoadon.group_ehoadon_send_invoice'):
+        if not self.env.user.has_group('ehoadon_17.group_ehoadon_send_invoice'):
             raise UserError(_('Bạn không có quyền tải PDF eHoaDon.'))
         if not self.ehoadon_invoice_id and not self.ehoadon_guid:
             raise UserError(_('Chưa có invoiceId/guid eHoaDon — hãy xem trước hoặc phát hành trước.'))
@@ -870,7 +872,7 @@ class AccountMove(models.Model):
 
     def action_ehoadon_download_xml(self):
         self.ensure_one()
-        if not self.env.user.has_group('ehoadon.group_ehoadon_send_invoice'):
+        if not self.env.user.has_group('ehoadon_17.group_ehoadon_send_invoice'):
             raise UserError(_('Bạn không có quyền tải XML eHoaDon.'))
         if not self.ehoadon_invoice_id and not self.ehoadon_guid:
             raise UserError(_('Chưa có invoiceId/guid eHoaDon.'))

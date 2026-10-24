@@ -220,7 +220,7 @@ class TestEhoadonPayload(TransactionCase):
         origin.ehoadon_invoice_id = 'origin-inv'
         self.move.ehoadon_business_type = 'replace'
         self.move.ehoadon_origin_move_id = origin.id
-        from odoo.addons.ehoadon.models.ehoadon_payload_builder import (
+        from odoo.addons.ehoadon_17.models.ehoadon_payload_builder import (
             EhoadonPayloadBuilder,
             INVOICE_TYPE_REPLACE,
         )
@@ -233,7 +233,7 @@ class TestEhoadonPayload(TransactionCase):
 
     def test_business_payload_has_no_origin_note_row(self):
         """eHoaDon prints the replace/adjust reference itself; items are only the product lines."""
-        from odoo.addons.ehoadon.models.ehoadon_payload_builder import (
+        from odoo.addons.ehoadon_17.models.ehoadon_payload_builder import (
             EhoadonPayloadBuilder,
             INVOICE_TYPE_ADJUSTED_DOWN,
             INVOICE_TYPE_REPLACE,
@@ -246,7 +246,7 @@ class TestEhoadonPayload(TransactionCase):
             self.assertFalse(any(item.get('explain') for item in items))
 
     def test_replacement_requires_group(self):
-        group = self.env.ref('ehoadon.group_ehoadon_send_replacement')
+        group = self.env.ref('ehoadon_17.group_ehoadon_send_replacement')
         self.move.ehoadon_business_type = 'replace'
         self.env.user.groups_id -= group
         with self.assertRaisesRegex(UserError, 'quyền phát hành hóa đơn thay thế'):
@@ -304,11 +304,11 @@ class TestEhoadonPayload(TransactionCase):
                 return FakeResp({'status': 'success', 'code': 200, 'data': {}})
             return FakeResp({'status': 'error', 'message': 'unexpected %s' % url}, status=400)
 
-        import odoo.addons.ehoadon.models.ehoadon_config as cfg_mod
+        import odoo.addons.ehoadon_17.models.ehoadon_config as cfg_mod
         old = cfg_mod.requests.request
         cfg_mod.requests.request = fake_request
         try:
-            self.env.user.groups_id |= self.env.ref('ehoadon.group_ehoadon_send_invoice')
+            self.env.user.groups_id |= self.env.ref('ehoadon_17.group_ehoadon_send_invoice')
             self.move.action_post()
             self.move.action_ehoadon_send_invoice()
         finally:
@@ -357,7 +357,7 @@ class TestEhoadonPayload(TransactionCase):
                 }})
             return FakeResp(responder(method, url))
 
-        import odoo.addons.ehoadon.models.ehoadon_config as cfg_mod
+        import odoo.addons.ehoadon_17.models.ehoadon_config as cfg_mod
         old = cfg_mod.requests.request
         cfg_mod.requests.request = fake_request
         try:
@@ -440,7 +440,7 @@ class TestEhoadonPayload(TransactionCase):
                     },
                 }
 
-        import odoo.addons.ehoadon.models.ehoadon_config as cfg_mod
+        import odoo.addons.ehoadon_17.models.ehoadon_config as cfg_mod
         old = cfg_mod.requests.request
         cfg_mod.requests.request = lambda *a, **k: FakeResp()
         try:
@@ -467,7 +467,7 @@ class TestEhoadonPayload(TransactionCase):
             def json(self):
                 raise ValueError('not json')
 
-        import odoo.addons.ehoadon.models.ehoadon_config as cfg_mod
+        import odoo.addons.ehoadon_17.models.ehoadon_config as cfg_mod
         old = cfg_mod.requests.request
         cfg_mod.requests.request = lambda *a, **k: FakeResp()
         try:
@@ -504,7 +504,7 @@ class TestEhoadonPayload(TransactionCase):
             'tenant_id': '5d1a348028069517e0d6f4aa',
             'tax_number': '0123456789',
         })
-        import odoo.addons.ehoadon.models.ehoadon_config as cfg_mod
+        import odoo.addons.ehoadon_17.models.ehoadon_config as cfg_mod
         old = cfg_mod.requests.request
         cfg_mod.requests.request = fake_request
         try:

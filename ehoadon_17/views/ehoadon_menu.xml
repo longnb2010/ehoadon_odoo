@@ -6,7 +6,7 @@
             id="menu_ehoadon_root"
             name="eHoaDon"
             web_icon="ehoadon,static/description/icon.png"
-            groups="ehoadon.group_ehoadon_manager"
+            groups="ehoadon_17.group_ehoadon_manager"
             sequence="11"
         />
         <menuitem
@@ -14,7 +14,7 @@
             name="Invoice Templates"
             parent="menu_ehoadon_root"
             action="action_ehoadon_template"
-            groups="ehoadon.group_ehoadon_manager"
+            groups="ehoadon_17.group_ehoadon_manager"
             sequence="1"
         />
         <!-- Hide legacy Configuration menu (sinvoice also has no Config menu) -->
