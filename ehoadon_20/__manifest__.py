@@ -5,9 +5,9 @@
     'category': 'Accounting',
     'license': 'AGPL-3',
     'summary': 'eHoaDon Online e-invoice on customer invoices',
-    'author': 'Thien Long Tri',
-    'website': 'https://thienlongtri.vn',
-    'support': 'longnb2010@gmail.com',
+    'author': 'BizStore Group',
+    'website': 'https://ehoadon.online',
+    'support': 'ehoadon@bizstore.vn',
     'depends': [
         'account',
         'l10n_vn',

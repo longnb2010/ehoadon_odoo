@@ -5,9 +5,9 @@
     'category': 'Accounting',
     'license': 'AGPL-3',
     'summary': 'Fill partner e-invoice info from a tax code (XInvoice lookup)',
-    'author': 'Thien Long Tri',
-    'website': 'https://thienlongtri.vn',
-    'support': 'longnb2010@gmail.com',
+    'author': 'BizStore Group',
+    'website': 'https://ehoadon.online',
+    'support': 'ehoadon@bizstore.vn',
     'depends': [
         'ehoadon_20',
     ],
