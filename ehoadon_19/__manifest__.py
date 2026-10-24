@@ -8,6 +8,10 @@
     'author': 'BizStore Group',
     'website': 'https://ehoadon.online',
     'support': 'ehoadon@bizstore.vn',
+    'images': [
+        'static/description/banner.png',
+        'static/description/icon.png',
+    ],
     'depends': [
         'account',
         'l10n_vn',
